@@ -47,5 +47,47 @@
  *   //      frequentContact: "Swiggy", allAbove100: false, hasLargeTransaction: true }
  */
 export function analyzeUPITransactions(transactions) {
-  // Your code here
+  if (!Array.isArray(transactions) || transactions.length === 0) return null;
+
+  const validTransactions = transactions.filter((transaction) => {
+    return (typeof transaction.amount === "number" && transaction.amount > 0) && (transaction.type === "credit" || transaction.type === "debit")
+  })
+
+  if (validTransactions.length === 0) return null;
+
+  const totalCredit = validTransactions.filter((transaction) => transaction.type === "credit").reduce((sum, transaction) => sum + transaction.amount, 0);
+  const totalDebit = validTransactions.filter((transaction) => transaction.type === "debit").reduce((sum, transaction) => sum + transaction.amount, 0);
+
+  const netBalance = totalCredit - totalDebit;
+  const transactionCount = validTransactions.length;
+  const totalTransaction = validTransactions.reduce((sum, transaction) => sum + transaction.amount, 0)
+  const avgTransaction = Math.round(totalTransaction / transactionCount);
+
+  const highestTransaction = validTransactions.reduce((max, transaction) => max.amount > transaction.amount ? max : transaction);
+  const categoryBreakdown = validTransactions.reduce((acc, transaction) => { acc[transaction.category] = (acc[transaction.category] || 0) + transaction.amount; return acc; }, {})
+
+  const freqMap = {};
+  validTransactions.forEach(transaction => {
+    freqMap[transaction.to] = (freqMap[transaction.to] || 0) + 1;
+  });
+  let frequentContact = null;
+  let maxCount = 0;
+  validTransactions.forEach((transaction)=>{
+    if(freqMap[transaction.to] > maxCount){
+      maxCount = freqMap[transaction.to];
+      frequentContact = transaction.to;
+    }
+  })
+
+  const allAbove100 = validTransactions.every((transaction) => transaction.amount > 100);
+
+  const hasLargeTransaction = validTransactions.some((transaction) => transaction.amount >= 5000);
+
+  return { totalCredit, totalDebit, netBalance, transactionCount, avgTransaction, highestTransaction, categoryBreakdown, frequentContact, allAbove100, hasLargeTransaction }
 }
+
+console.log(analyzeUPITransactions([
+  { id: "T1", type: "credit", amount: 5000, to: "Salary", category: "income", date: "2025-01-01" },
+  { id: "T2", type: "debit", amount: 200, to: "Swiggy", category: "food", date: "2025-01-02" },
+  { id: "T3", type: "debit", amount: 100, to: "Swiggy", category: "food", date: "2025-01-03" }
+]))
